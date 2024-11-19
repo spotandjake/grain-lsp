@@ -1,0 +1,918 @@
+module Enumerations
+
+enum TokenFormat {
+  Relative,
+}
+enum PrepareSupportDefaultBehavior {
+  /**
+   * The client's default behavior is to select the identifier
+according the to language's syntax rule.
+   */
+  Identifier,
+}
+enum FailureHandlingKind {
+  /**
+   * The client tries to undo the operations already executed. But there is no
+guarantee that this is succeeding.
+   */
+  Undo,
+  /**
+   * If the workspace edit contains only textual file changes they are executed transactional.
+If resource changes (create, rename or delete file) are part of the change the failure
+handling strategy is abort.
+   */
+  TextOnlyTransactional,
+  /**
+   * All operations are executed transactional. That means they either all
+succeed or no changes at all are applied to the workspace.
+   */
+  Transactional,
+  /**
+   * Applying the workspace change is simply aborted if one of the changes provided
+fails. All operations executed before the failing operation stay executed.
+   */
+  Abort,
+}
+enum ResourceOperationKind {
+  /**
+   * Supports deleting existing files and folders.
+   */
+  Delete,
+  /**
+   * Supports renaming existing files and folders.
+   */
+  Rename,
+  /**
+   * Supports creating new files and folders.
+   */
+  Create,
+}
+/**
+ * A notebook cell kind.
+
+@since 3.17.0
+ * @since 3.17.0
+ */
+enum NotebookCellKind {
+  /**
+   * A code-cell is source code.
+   */
+  Code,
+  /**
+   * A markup-cell is formatted source that is used for display.
+   */
+  Markup,
+}
+/**
+ * A pattern kind describing if a glob pattern matches a file a folder or
+both.
+
+@since 3.16.0
+ * @since 3.16.0
+ */
+enum FileOperationPatternKind {
+  /**
+   * The pattern matches a folder only.
+   */
+  Folder,
+  /**
+   * The pattern matches a file only.
+   */
+  File,
+}
+/**
+ * The reason why code actions were requested.
+
+@since 3.17.0
+ * @since 3.17.0
+ */
+enum CodeActionTriggerKind {
+  /**
+   * Code actions were requested automatically.
+
+This typically happens when current selection in a file changes, but can
+also be triggered when file content changes.
+   */
+  Automatic,
+  /**
+   * Code actions were explicitly requested by the user or by an extension.
+   */
+  Invoked,
+}
+/**
+ * How a signature help was triggered.
+
+@since 3.15.0
+ * @since 3.15.0
+ */
+enum SignatureHelpTriggerKind {
+  /**
+   * Signature help was triggered by the cursor moving or by the document content changing.
+   */
+  ContentChange,
+  /**
+   * Signature help was triggered by a trigger character.
+   */
+  TriggerCharacter,
+  /**
+   * Signature help was invoked manually by the user or by a command.
+   */
+  Invoked,
+}
+/**
+ * How a completion was triggered
+ */
+enum CompletionTriggerKind {
+  /**
+   * Completion was re-triggered as current completion list is incomplete
+   */
+  TriggerForIncompleteCompletions,
+  /**
+   * Completion was triggered by a trigger character specified by
+the `triggerCharacters` properties of the `CompletionRegistrationOptions`.
+   */
+  TriggerCharacter,
+  /**
+   * Completion was triggered by typing an identifier (24x7 code
+complete), manual invocation (e.g Ctrl+Space) or via API.
+   */
+  Invoked,
+}
+/**
+ * The diagnostic tags.
+
+@since 3.15.0
+ * @since 3.15.0
+ */
+enum DiagnosticTag {
+  /**
+   * Deprecated or obsolete code.
+
+Clients are allowed to rendered diagnostics with this tag strike through.
+   */
+  Deprecated,
+  /**
+   * Unused or unnecessary code.
+
+Clients are allowed to render diagnostics with this tag faded out instead of having
+an error squiggle.
+   */
+  Unnecessary,
+}
+/**
+ * The diagnostic's severity.
+ */
+enum DiagnosticSeverity {
+  /**
+   * Reports a hint.
+   */
+  Hint,
+  /**
+   * Reports an information.
+   */
+  Information,
+  /**
+   * Reports a warning.
+   */
+  Warning,
+  /**
+   * Reports an error.
+   */
+  Error,
+}
+enum WatchKind {
+  /**
+   * Interested in delete events
+   */
+  Delete,
+  /**
+   * Interested in change events
+   */
+  Change,
+  /**
+   * Interested in create events.
+   */
+  Create,
+}
+/**
+ * The file event type
+ */
+enum FileChangeType {
+  /**
+   * The file got deleted.
+   */
+  Deleted,
+  /**
+   * The file got changed.
+   */
+  Changed,
+  /**
+   * The file got created.
+   */
+  Created,
+}
+/**
+ * A set of predefined position encoding kinds.
+
+@since 3.17.0
+ * @since 3.17.0
+ */
+enum PositionEncodingKind {
+  /**
+   * Character offsets count UTF-32 code units.
+
+Implementation note: these are the same as Unicode codepoints,
+so this `PositionEncodingKind` may also be used for an
+encoding-agnostic representation of character offsets.
+   */
+  UTF32,
+  /**
+   * Character offsets count UTF-16 code units.
+
+This is the default and must always be supported
+by servers
+   */
+  UTF16,
+  /**
+   * Character offsets count UTF-8 code units (e.g. bytes).
+   */
+  UTF8,
+}
+/**
+ * Describes how an {@link InlineCompletionItemProvider inline completion provider} was triggered.
+
+@since 3.18.0
+@proposed
+ * @since 3.18.0
+ */
+enum InlineCompletionTriggerKind {
+  /**
+   * Completion was triggered automatically while editing.
+   */
+  Automatic,
+  /**
+   * Completion was triggered explicitly by a user gesture.
+   */
+  Invoked,
+}
+/**
+ * Predefined Language kinds
+@since 3.18.0
+@proposed
+ * @since 3.18.0
+ */
+enum LanguageKind {
+  YAML,
+  XSL,
+  XML,
+  VisualBasic,
+  TeX,
+  TypeScriptReact,
+  TypeScript,
+  Swift,
+  SQL,
+  ShellScript,
+  ShaderLab,
+  Scala,
+  SASS,
+  SCSS,
+  Rust,
+  Ruby,
+  Razor,
+  R,
+  Python,
+  Pug,
+  Powershell,
+  PHP,
+  Perl6,
+  Perl,
+  /**
+   * @since 3.18.0
+@proposed
+   * @since 3.18.0
+   */
+  Pascal,
+  ObjectiveCPP,
+  ObjectiveC,
+  Markdown,
+  Makefile,
+  Lua,
+  Less,
+  LaTeX,
+  JSON,
+  JavaScriptReact,
+  JavaScript,
+  Java,
+  Ini,
+  HTML,
+  Haskell,
+  Handlebars,
+  Groovy,
+  Go,
+  GitRebase,
+  GitCommit,
+  FSharp,
+  Erlang,
+  Elixir,
+  Dockerfile,
+  Dart,
+  Diff,
+  /**
+   * @since 3.18.0
+@proposed
+   * @since 3.18.0
+   */
+  Delphi,
+  /**
+   * @since 3.18.0
+@proposed
+   * @since 3.18.0
+   */
+  D,
+  CSS,
+  CSharp,
+  CPP,
+  C,
+  Coffeescript,
+  Clojure,
+  BibTeX,
+  WindowsBat,
+  ABAP,
+}
+/**
+ * Describes the content type that a client supports in various
+result literals like `Hover`, `ParameterInfo` or `CompletionItem`.
+
+Please note that `MarkupKinds` must not start with a `$`. This kinds
+are reserved for internal usage.
+ */
+enum MarkupKind {
+  /**
+   * Markdown is supported as a content format
+   */
+  Markdown,
+  /**
+   * Plain text is supported as a content format
+   */
+  PlainText,
+}
+enum TraceValue {
+  /**
+   * Verbose message tracing.
+   */
+  Verbose,
+  /**
+   * Trace messages only.
+   */
+  Messages,
+  /**
+   * Turn tracing off.
+   */
+  Off,
+}
+/**
+ * Code action tags are extra annotations that tweak the behavior of a code action.
+
+@since 3.18.0 - proposed
+ * @since 3.18.0 - proposed
+ */
+enum CodeActionTag {
+  /**
+   * Marks the code action as LLM-generated.
+   */
+  LLMGenerated,
+}
+/**
+ * A set of predefined code action kinds
+ */
+enum CodeActionKind {
+  /**
+   * Base kind for all code actions applying to the entire notebook's scope. CodeActionKinds using
+this should always begin with `notebook.`
+
+@since 3.18.0
+   * @since 3.18.0
+   */
+  Notebook,
+  /**
+   * Base kind for auto-fix source actions: `source.fixAll`.
+
+Fix all actions automatically fix errors that have a clear fix that do not require user input.
+They should not suppress errors or perform unsafe fixes such as generating new types or classes.
+
+@since 3.15.0
+   * @since 3.15.0
+   */
+  SourceFixAll,
+  /**
+   * Base kind for an organize imports source action: `source.organizeImports`
+   */
+  SourceOrganizeImports,
+  /**
+   * Base kind for source actions: `source`
+
+Source code actions apply to the entire file.
+   */
+  Source,
+  /**
+   * Base kind for refactoring rewrite actions: 'refactor.rewrite'
+
+Example rewrite actions:
+
+- Convert JavaScript function to class
+- Add or remove parameter
+- Encapsulate field
+- Make method static
+- Move method to base class
+- ...
+   */
+  RefactorRewrite,
+  /**
+   * Base kind for refactoring move actions: `refactor.move`
+
+Example move actions:
+
+- Move a function to a new file
+- Move a property between classes
+- Move method to base class
+- ...
+
+@since 3.18.0
+@proposed
+   * @since 3.18.0
+   */
+  RefactorMove,
+  /**
+   * Base kind for refactoring inline actions: 'refactor.inline'
+
+Example inline actions:
+
+- Inline function
+- Inline variable
+- Inline constant
+- ...
+   */
+  RefactorInline,
+  /**
+   * Base kind for refactoring extraction actions: 'refactor.extract'
+
+Example extract actions:
+
+- Extract method
+- Extract function
+- Extract variable
+- Extract interface from class
+- ...
+   */
+  RefactorExtract,
+  /**
+   * Base kind for refactoring actions: 'refactor'
+   */
+  Refactor,
+  /**
+   * Base kind for quickfix actions: 'quickfix'
+   */
+  QuickFix,
+  /**
+   * Empty kind.
+   */
+  Empty,
+}
+/**
+ * A document highlight kind.
+ */
+enum DocumentHighlightKind {
+  /**
+   * Write-access of a symbol, like writing to a variable.
+   */
+  Write,
+  /**
+   * Read-access of a symbol, like reading a variable.
+   */
+  Read,
+  /**
+   * A textual occurrence.
+   */
+  Text,
+}
+/**
+ * How whitespace and indentation is handled during completion
+item insertion.
+
+@since 3.16.0
+ * @since 3.16.0
+ */
+enum InsertTextMode {
+  /**
+   * The editor adjusts leading whitespace of new lines so that
+they match the indentation up to the cursor of the line for
+which the item is accepted.
+
+Consider a line like this: <2tabs><cursor><3tabs>foo. Accepting a
+multi line completion item is indented using 2 tabs and all
+following lines inserted will be indented using 2 tabs as well.
+   */
+  AdjustIndentation,
+  /**
+   * The insertion or replace strings is taken as it is. If the
+value is multi line the lines below the cursor will be
+inserted using the indentation defined in the string value.
+The client will not apply any kind of adjustments to the
+string.
+   */
+  AsIs,
+}
+/**
+ * Defines whether the insert text in a completion item should be interpreted as
+plain text or a snippet.
+ */
+enum InsertTextFormat {
+  /**
+   * The primary text to be inserted is treated as a snippet.
+
+A snippet can define tab stops and placeholders with `$1`, `$2`
+and `${3:foo}`. `$0` defines the final tab stop, it defaults to
+the end of the snippet. Placeholders with equal identifiers are linked,
+that is typing in one will update others too.
+
+See also: https://microsoft.github.io/language-server-protocol/specifications/specification-current/#snippet_syntax
+   */
+  Snippet,
+  /**
+   * The primary text to be inserted is treated as a plain string.
+   */
+  PlainText,
+}
+/**
+ * Completion item tags are extra annotations that tweak the rendering of a completion
+item.
+
+@since 3.15.0
+ * @since 3.15.0
+ */
+enum CompletionItemTag {
+  /**
+   * Render a completion as obsolete, usually using a strike-out.
+   */
+  Deprecated,
+}
+/**
+ * The kind of a completion entry.
+ */
+enum CompletionItemKind {
+  TypeParameter,
+  Operator,
+  Event,
+  Struct,
+  Constant,
+  EnumMember,
+  Folder,
+  Reference,
+  File,
+  Color,
+  Snippet,
+  Keyword,
+  Enum,
+  Value,
+  Unit,
+  Property,
+  Module,
+  Interface,
+  Class,
+  Variable,
+  Field,
+  Constructor,
+  Function,
+  Method,
+  Text,
+}
+/**
+ * Represents reasons why a text document is saved.
+ */
+enum TextDocumentSaveReason {
+  /**
+   * When the editor lost focus.
+   */
+  FocusOut,
+  /**
+   * Automatic after a delay.
+   */
+  AfterDelay,
+  /**
+   * Manually triggered, e.g. by the user pressing save, by starting debugging,
+or by an API call.
+   */
+  Manual,
+}
+/**
+ * Defines how the host (editor) should sync
+document changes to the language server.
+ */
+enum TextDocumentSyncKind {
+  /**
+   * Documents are synced by sending the full content on open.
+After that only incremental updates to the document are
+send.
+   */
+  Incremental,
+  /**
+   * Documents are synced by always sending the full content
+of the document.
+   */
+  Full,
+  /**
+   * Documents should not be synced at all.
+   */
+  None,
+}
+/**
+ * The message type
+ */
+enum MessageType {
+  /**
+   * A debug message.
+
+@since 3.18.0
+@proposed
+   * @since 3.18.0
+   */
+  Debug,
+  /**
+   * A log message.
+   */
+  Log,
+  /**
+   * An information message.
+   */
+  Info,
+  /**
+   * A warning message.
+   */
+  Warning,
+  /**
+   * An error message.
+   */
+  Error,
+}
+/**
+ * Inlay hint kinds.
+
+@since 3.17.0
+ * @since 3.17.0
+ */
+enum InlayHintKind {
+  /**
+   * An inlay hint that is for a parameter.
+   */
+  Parameter,
+  /**
+   * An inlay hint that for a type annotation.
+   */
+  Type,
+}
+/**
+ * The moniker kind.
+
+@since 3.16.0
+ * @since 3.16.0
+ */
+enum MonikerKind {
+  /**
+   * The moniker represents a symbol that is local to a project (e.g. a local
+variable of a function, a class not visible outside the project, ...)
+   */
+  Local,
+  /**
+   * The moniker represents a symbol that is exported from a project
+   */
+  Export,
+  /**
+   * The moniker represent a symbol that is imported into a project
+   */
+  Import,
+}
+/**
+ * Moniker uniqueness level to define scope of the moniker.
+
+@since 3.16.0
+ * @since 3.16.0
+ */
+enum UniquenessLevel {
+  /**
+   * The moniker is globally unique
+   */
+  Global,
+  /**
+   * The moniker is unique inside the moniker scheme.
+   */
+  Scheme,
+  /**
+   * The moniker is unique inside the group to which a project belongs
+   */
+  Group,
+  /**
+   * The moniker is unique inside a project for which a dump got created
+   */
+  Project,
+  /**
+   * The moniker is only unique inside a document
+   */
+  Document,
+}
+/**
+ * Symbol tags are extra annotations that tweak the rendering of a symbol.
+
+@since 3.16
+ * @since 3.16
+ */
+enum SymbolTag {
+  /**
+   * Render a symbol as obsolete, usually using a strike-out.
+   */
+  Deprecated,
+}
+/**
+ * A symbol kind.
+ */
+enum SymbolKind {
+  TypeParameter,
+  Operator,
+  Event,
+  Struct,
+  EnumMember,
+  Null,
+  Key,
+  Object,
+  Array,
+  Boolean,
+  Number,
+  String,
+  Constant,
+  Variable,
+  Function,
+  Interface,
+  Enum,
+  Constructor,
+  Field,
+  Property,
+  Method,
+  Class,
+  Package,
+  Namespace,
+  Module,
+  File,
+}
+/**
+ * A set of predefined range kinds.
+ */
+enum FoldingRangeKind {
+  /**
+   * Folding range for a region (e.g. `#region`)
+   */
+  Region,
+  /**
+   * Folding range for an import or include
+   */
+  Imports,
+  /**
+   * Folding range for a comment
+   */
+  Comment,
+}
+enum LSPErrorCodes {
+  /**
+   * The client has canceled a request and a server has detected
+the cancel.
+   */
+  RequestCancelled,
+  /**
+   * The server detected that the content of a document got
+modified outside normal conditions. A server should
+NOT send this error code if it detects a content change
+in it unprocessed messages. The result even computed
+on an older state might still be useful for the client.
+
+If a client decides that a result is not of any use anymore
+the client should cancel the request.
+   */
+  ContentModified,
+  /**
+   * The server cancelled the request. This error code should
+only be used for requests that explicitly support being
+server cancellable.
+
+@since 3.17.0
+   * @since 3.17.0
+   */
+  ServerCancelled,
+  /**
+   * A request failed but it was syntactically correct, e.g the
+method name was known and the parameters were valid. The error
+message should contain human readable information about why
+the request failed.
+
+@since 3.17.0
+   * @since 3.17.0
+   */
+  RequestFailed,
+}
+/**
+ * Predefined error codes.
+ */
+enum ErrorCodes {
+  UnknownErrorCode,
+  /**
+   * Error code indicating that a server received a notification or
+request before the server has received the `initialize` request.
+   */
+  ServerNotInitialized,
+  InternalError,
+  InvalidParams,
+  MethodNotFound,
+  InvalidRequest,
+  ParseError,
+}
+/**
+ * The document diagnostic report kinds.
+
+@since 3.17.0
+ * @since 3.17.0
+ */
+enum DocumentDiagnosticReportKind {
+  /**
+   * A report indicating that the last
+returned report is still accurate.
+   */
+  Unchanged,
+  /**
+   * A diagnostic report with a full
+set of problems.
+   */
+  Full,
+}
+/**
+ * A set of predefined token modifiers. This set is not fixed
+an clients can specify additional token types via the
+corresponding client capabilities.
+
+@since 3.16.0
+ * @since 3.16.0
+ */
+enum SemanticTokenModifiers {
+  DefaultLibrary,
+  Documentation,
+  Modification,
+  Async,
+  Abstract,
+  Deprecated,
+  Static,
+  Readonly,
+  Definition,
+  Declaration,
+}
+/**
+ * A set of predefined token types. This set is not fixed
+an clients can specify additional token types via the
+corresponding client capabilities.
+
+@since 3.16.0
+ * @since 3.16.0
+ */
+enum SemanticTokenTypes {
+  /**
+   * @since 3.18.0
+   * @since 3.18.0
+   */
+  Label,
+  /**
+   * @since 3.17.0
+   * @since 3.17.0
+   */
+  Decorator,
+  Operator,
+  Regexp,
+  Number,
+  String,
+  Comment,
+  Modifier,
+  Keyword,
+  Macro,
+  Method,
+  Function,
+  Event,
+  EnumMember,
+  Property,
+  Variable,
+  Parameter,
+  TypeParameter,
+  Struct,
+  Interface,
+  Enum,
+  Class,
+  /**
+   * Represents a generic type. Acts as a fallback for types which can't be mapped to
+a specific type like class or enum.
+   */
+  Type,
+  Namespace,
+}

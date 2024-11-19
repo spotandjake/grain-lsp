@@ -1,0 +1,12 @@
+module Utils
+
+from "char" include Char
+from "string" include String
+
+provide let toGrainUIdent = str => {
+  let chars = String.explode(str)
+  if (String.length(str) != 0) {
+    chars[0] = Char.Ascii.toUppercase(chars[0])
+  }
+  String.implode(chars)
+}

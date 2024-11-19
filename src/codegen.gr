@@ -1,0 +1,89 @@
+module CodeGen
+
+from "list" include List
+from "buffer" include Buffer
+from "path" include Path
+from "./metaModel.gr" include MetaModel
+from "./utils/grainPrint.gr" include GrainPrint
+from "./utils/Fs.gr" include Fs
+from "./utils/utils.gr" include Utils
+use Utils.{ toGrainUIdent }
+
+let writeOptionalLine = (value, prefix, postfix, buffer) => {
+  match (value) {
+    Some(value) => {
+      Buffer.addString(prefix, buffer)
+      Buffer.addString(value, buffer)
+      Buffer.addString(postfix, buffer)
+    },
+    None => void,
+  }
+}
+
+let generateRequest = () => void
+let generateNotification = () => void
+let generateStructure = () => void
+
+let generateEnumerationEntry = (
+  buffer,
+  enumerationEntry: MetaModel.LspEnumerationEntry,
+) => {
+  // name: String,
+  // value: MetaModel.LspEnumerationEntryValue
+  let hasDocumentation = enumerationEntry.deprecated != None ||
+    enumerationEntry.documentation != None ||
+    enumerationEntry.since != None
+  if (hasDocumentation) {
+    Buffer.addString("  /**\n", buffer)
+    writeOptionalLine(enumerationEntry.documentation, "   * ", "\n", buffer)
+    writeOptionalLine(
+      enumerationEntry.deprecated,
+      "   * @deprecated ",
+      "\n",
+      buffer
+    )
+    writeOptionalLine(enumerationEntry.since, "   * @since ", "\n", buffer)
+    Buffer.addString("   */\n", buffer)
+  }
+  Buffer.addString("  ", buffer)
+  Buffer.addString(toGrainUIdent(enumerationEntry.name), buffer)
+  Buffer.addString(",\n", buffer)
+  void
+}
+let generateEnumeration = (buffer, enumeration: MetaModel.LspEnumeration) => {
+  // Build documentation
+  let hasDocumentation = enumeration.deprecated != None ||
+    enumeration.documentation != None ||
+    enumeration.since != None
+  if (hasDocumentation) {
+    Buffer.addString("/**\n", buffer)
+    writeOptionalLine(enumeration.documentation, " * ", "\n", buffer)
+    writeOptionalLine(enumeration.deprecated, " * @deprecated ", "\n", buffer)
+    writeOptionalLine(enumeration.since, " * @since ", "\n", buffer)
+    Buffer.addString(" */\n", buffer)
+  }
+  // TODO: Build serialization
+  // TODO: Build deserialization
+  // Build enum
+  Buffer.addString("enum ", buffer)
+  Buffer.addString(toGrainUIdent(enumeration.name), buffer)
+  Buffer.addString(" {\n", buffer)
+  List.forEach(e => generateEnumerationEntry(buffer, e), enumeration.values)
+  Buffer.addString("}\n", buffer)
+}
+let generateTypeAlias = () => void
+
+provide let fromMetaModel = (metaModel: MetaModel.LspMetaModel) => {
+  let enumerationBuffer = Buffer.make(0)
+  Buffer.addString("module Enumerations\n", enumerationBuffer)
+  List.forEach(
+    e => generateEnumeration(enumerationBuffer, e),
+    metaModel.enumerations
+  )
+  // TODO: temporary Write
+  Fs.Binary.writeFile(
+    Path.fromString("./out/enumeration.gr"),
+    Buffer.toBytes(enumerationBuffer)
+  )
+  return Ok(void)
+}

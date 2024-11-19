@@ -1,2 +1,2 @@
-**/*.wasm.gr
-*.gr
+*.gr.wasm
+.DS_Store

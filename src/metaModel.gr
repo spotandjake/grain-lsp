@@ -1,0 +1,631 @@
+module MetaModel
+
+from "json" include Json
+from "list" include List
+from "./utils/grainPrint.gr" include GrainPrint
+
+provide enum MetaModelConversionError {
+  JsonParseError(Json.JsonParseError),
+  ConversionError,
+}
+use Json.Lenses.{
+  type Lens,
+  (||>),
+  get,
+  property as prop,
+  number,
+  string,
+  array,
+  boolean,
+}
+let dummySet = (_, _) => None
+let typedArray = lens => { get: json => {
+  match (get(array, json)) {
+    Some(v) => List.reduce((acc, r) => match (acc) {
+      Some(acc) => match (get(lens, r)) {
+        Some(r) => Some([r, ...acc]),
+        None => None,
+      },
+      None => None,
+    }, Some([]), v),
+    None => None,
+  }
+}, set: dummySet }
+
+// Lsp Types
+provide enum LspBaseType {
+  BaseTypeURI,
+  BaseTypeDocumentUri,
+  BaseTypeInteger,
+  BaseTypeUInteger,
+  BaseTypeDecimal,
+  BaseTypeRegExp,
+  BaseTypeString,
+  BaseTypeBoolean,
+  BaseTypeNull,
+}
+provide record rec LspProperty {
+  name: String,
+  type_: LspType,
+  deprecated: Option<String>,
+  documentation: Option<String>,
+  optional: Option<Bool>,
+  proposed: Option<Bool>,
+  since: Option<String>,
+  sinceTags: Option<List<String>>,
+}
+and provide record LspStructureLiteral {
+  properties: List<LspProperty>,
+  deprecated: Option<String>,
+  documentation: Option<String>,
+  proposed: Option<Bool>,
+  since: Option<String>,
+  sinceTags: Option<List<String>>,
+}
+and provide enum LspType {
+  BaseType(LspBaseType),
+  ReferenceType{ value: String, },
+  ArrayType{ value: LspType, },
+  // Note: key is a subset of LspType
+  MapType{ key: LspType, value: LspType },
+  AndType{ value: List<LspType>, },
+  OrType{ value: List<LspType>, },
+  TupleType{ value: List<LspType>, },
+  StructureLiteralType{ value: LspStructureLiteral, },
+  StringLiteralType{ value: String, },
+  IntegerLiteralType{ value: Number, },
+  BooleanLiteralType{ value: Bool, },
+}
+
+provide enum LspMessageDirection {
+  ClientToServer,
+  ServerToClient,
+  Both,
+}
+
+provide record LspMetaData {
+  version: String,
+}
+
+provide enum LspParam {
+  LspParam(LspType),
+  LspParamArray(List<LspType>),
+}
+
+provide record LspRequest {
+  method: String,
+  typeName: Option<String>,
+  params: Option<LspParam>,
+  result: LspType,
+  partialResult: Option<LspType>,
+  errorData: Option<LspType>,
+  registrationMethod: Option<String>,
+  registrationOptions: Option<LspType>,
+  messageDirection: LspMessageDirection,
+  documentation: Option<String>,
+  since: Option<String>,
+  sinceTags: Option<List<String>>,
+  proposed: Option<Bool>,
+  deprecated: Option<String>,
+}
+
+provide record LspNotification {
+  method: String,
+  typeName: Option<String>,
+  params: Option<LspType>,
+  registrationMethod: Option<String>,
+  registrationOptions: Option<LspType>,
+  messageDirection: LspMessageDirection,
+  documentation: Option<String>,
+  since: Option<String>,
+  sinceTags: Option<List<String>>,
+  proposed: Option<Bool>,
+  deprecated: Option<String>,
+}
+
+provide record LspStructure {
+  name: String,
+  properties: List<LspProperty>,
+  deprecated: Option<String>,
+  documentation: Option<String>,
+  extends: Option<List<LspType>>,
+  mixins: Option<List<LspType>>,
+  proposed: Option<Bool>,
+  since: Option<String>,
+  sinceTags: Option<List<String>>,
+}
+provide enum LspEnumerationEntryValue {
+  EnumerationEntryString(String),
+  EnumerationEntryNumber(Number),
+}
+provide record LspEnumerationEntry {
+  name: String,
+  value: LspEnumerationEntryValue,
+  deprecated: Option<String>,
+  documentation: Option<String>,
+  proposed: Option<Bool>,
+  since: Option<String>,
+  sinceTags: Option<List<String>>,
+}
+provide enum LspEnumerationType {
+  EnumerationString,
+  EnumerationInteger,
+  EnumerationUInteger,
+}
+provide record LspEnumeration {
+  name: String,
+  type_: LspEnumerationType,
+  values: List<LspEnumerationEntry>,
+  deprecated: Option<String>,
+  documentation: Option<String>,
+  proposed: Option<Bool>,
+  since: Option<String>,
+  sinceTags: Option<List<String>>,
+  supportsCustomValues: Option<Bool>,
+}
+
+provide record LspTypeAlias {
+  name: String,
+  type_: LspType,
+  deprecated: Option<String>,
+  documentation: Option<String>,
+  proposed: Option<Bool>,
+  since: Option<String>,
+  sinceTags: Option<List<String>>,
+}
+
+provide record LspMetaModel {
+  metaData: LspMetaData,
+  requests: List<LspRequest>,
+  notifications: List<LspNotification>,
+  structures: List<LspStructure>,
+  enumerations: List<LspEnumeration>,
+  typeAliases: List<LspTypeAlias>,
+}
+
+// LspMetaData
+let lspMetaData = { get: json => {
+  match (get(prop("version") ||> string, json)) {
+    Some(version) => Some({ version, }),
+    None => None,
+  }
+}, set: dummySet }
+// LspBaseType
+let lspBaseType = { get: json => {
+  match (get(prop("name") ||> string, json)) {
+    Some("URI") => Some(BaseTypeURI),
+    Some("DocumentUri") => Some(BaseTypeDocumentUri),
+    Some("integer") => Some(BaseTypeInteger),
+    Some("uinteger") => Some(BaseTypeUInteger),
+    Some("decimal") => Some(BaseTypeDecimal),
+    Some("RegExp") => Some(BaseTypeRegExp),
+    Some("string") => Some(BaseTypeString),
+    Some("boolean") => Some(BaseTypeBoolean),
+    Some("null") => Some(BaseTypeNull),
+    _ => None,
+  }
+}, set: dummySet }
+// LspProperty
+let rec getLspType = json => {
+  match (get(prop("kind") ||> string, json)) {
+    Some("base") => match (get(lspBaseType, json)) {
+      Some(v) => Some(BaseType(v)),
+      None => None,
+    },
+    Some("reference") => match (get(prop("name") ||> string, json)) {
+      Some(v) => Some(ReferenceType{ value: v }),
+      None => None,
+    },
+    Some("array") =>
+      match (get(prop("element") ||> { get: getLspType, set: dummySet }, json)) {
+        Some(v) => Some(ArrayType{ value: v }),
+        None => None,
+      },
+    Some("map") => {
+      let key = match (
+        get(prop("key") ||> { get: getLspType, set: dummySet }, json)
+      ) {
+        Some(v) => Some(v),
+        None => None,
+      }
+      let value = match (
+        get(prop("value") ||> { get: getLspType, set: dummySet }, json)
+      ) {
+        Some(v) => Some(v),
+        None => None,
+      }
+      match ((key, value)) {
+        (Some(key), Some(value)) => Some(MapType{ key, value }),
+        _ => None,
+      }
+    },
+    Some("and") =>
+      match (
+        get(
+          prop("items") ||> typedArray({ get: getLspType, set: dummySet }),
+          json
+        )
+      ) {
+        Some(v) => Some(AndType{ value: v }),
+        None => None,
+      },
+    Some("or") =>
+      match (
+        get(
+          prop("items") ||> typedArray({ get: getLspType, set: dummySet }),
+          json
+        )
+      ) {
+        Some(v) => Some(OrType{ value: v }),
+        None => None,
+      },
+    Some("tuple") =>
+      match (
+        get(
+          prop("items") ||> typedArray({ get: getLspType, set: dummySet }),
+          json
+        )
+      ) {
+        Some(v) => Some(TupleType{ value: v }),
+        None => None,
+      },
+    Some("literal") =>
+      match (
+        get(prop("value") ||> { get: getStructureLiteral, set: dummySet }, json)
+      ) {
+        Some(v) => Some(StructureLiteralType{ value: v }),
+        None => None,
+      },
+    Some("stringLiteral") => match (get(prop("value") ||> string, json)) {
+      Some(v) => Some(StringLiteralType{ value: v }),
+      None => None,
+    },
+    Some("integerLiteral") => match (get(prop("value") ||> number, json)) {
+      Some(v) => Some(IntegerLiteralType{ value: v }),
+      None => None,
+    },
+    Some("booleanLiteral") => match (get(prop("value") ||> boolean, json)) {
+      Some(v) => Some(BooleanLiteralType{ value: v }),
+      None => None,
+    },
+    _ => None,
+  }
+}
+and getLspProperty = json => {
+  let name = match (get(prop("name") ||> string, json)) {
+    Some(v) => v,
+    None => return None,
+  }
+  let type_ = match (
+    get(prop("type") ||> { get: getLspType, set: dummySet }, json)
+  ) {
+    Some(v) => v,
+    None => return None,
+  }
+  let deprecated = get(prop("deprecated") ||> string, json)
+  let documentation = get(prop("documentation") ||> string, json)
+  let optional = get(prop("optional") ||> boolean, json)
+  let proposed = get(prop("proposed") ||> boolean, json)
+  let since = get(prop("since") ||> string, json)
+  let sinceTags = get(prop("sinceTags") ||> typedArray(string), json)
+  return Some(
+    {
+      name,
+      type_,
+      deprecated,
+      documentation,
+      optional,
+      proposed,
+      since,
+      sinceTags,
+    },
+  )
+}
+and getStructureLiteral = json => {
+  let properties = match (
+    get(
+      prop("properties") ||> typedArray({ get: getLspProperty, set: dummySet }),
+      json
+    )
+  ) {
+    Some(v) => v,
+    None => return None,
+  }
+  let deprecated = get(prop("deprecated") ||> string, json)
+  let documentation = get(prop("documentation") ||> string, json)
+  let proposed = get(prop("proposed") ||> boolean, json)
+  let since = get(prop("since") ||> string, json)
+  let sinceTags = get(prop("sinceTags") ||> typedArray(string), json)
+  return Some(
+    { properties, deprecated, documentation, proposed, since, sinceTags },
+  )
+}
+
+let lspProperty = { get: getLspProperty, set: dummySet }
+let lspStructureLiteral = { get: getStructureLiteral, set: dummySet }
+let lspType = { get: getLspType, set: dummySet }
+
+// LspParam
+let lspParam = { get: json => {
+  match (json) {
+    Json.JsonObject(_) => match (get(lspType, json)) {
+      Some(v) => Some(LspParam(v)),
+      None => None,
+    },
+    Json.JsonArray(_) => match (get(typedArray(lspType), json)) {
+      Some(v) => Some(LspParamArray(v)),
+      None => None,
+    },
+    _ => None,
+  }
+}, set: dummySet }
+
+// LspMessageDirection
+let lspMessageDirection = { get: json => {
+  match (json) {
+    Json.JsonString("clientToServer") => Some(ClientToServer),
+    Json.JsonString("serverToClient") => Some(ServerToClient),
+    Json.JsonString("both") => Some(Both),
+    _ => None,
+  }
+}, set: dummySet }
+
+// LspRequest
+let lspRequest = { get: json => {
+  let method = match (get(prop("method") ||> string, json)) {
+    Some(v) => v,
+    None => return None,
+  }
+  let typeName = get(prop("typeName") ||> string, json)
+  let params = get(prop("params") ||> lspParam, json)
+  let result = match (get(prop("result") ||> lspType, json)) {
+    Some(v) => v,
+    None => return None,
+  }
+  let partialResult = get(prop("partialResult") ||> lspType, json)
+  let errorData = get(prop("errorData") ||> lspType, json)
+  let registrationMethod = get(prop("registrationMethod") ||> string, json)
+  let registrationOptions = get(prop("registrationOptions") ||> lspType, json)
+  let messageDirection = match (
+    get(prop("messageDirection") ||> lspMessageDirection, json)
+  ) {
+    Some(v) => v,
+    None => return None,
+  }
+  let documentation = get(prop("documentation") ||> string, json)
+  let since = get(prop("since") ||> string, json)
+  let sinceTags = get(prop("sinceTags") ||> typedArray(string), json)
+  let proposed = get(prop("proposed") ||> boolean, json)
+  let deprecated = get(prop("deprecated") ||> string, json)
+  return Some(
+    {
+      method,
+      typeName,
+      params,
+      result,
+      partialResult,
+      errorData,
+      registrationMethod,
+      registrationOptions,
+      messageDirection,
+      documentation,
+      since,
+      sinceTags,
+      proposed,
+      deprecated,
+    },
+  )
+}, set: dummySet }
+
+// LspNotification
+let lspNotification = { get: json => {
+  let method = match (get(prop("method") ||> string, json)) {
+    Some(v) => v,
+    None => return None,
+  }
+  let typeName = get(prop("typeName") ||> string, json)
+  let params = get(prop("params") ||> lspType, json)
+  let registrationMethod = get(prop("registrationMethod") ||> string, json)
+  let registrationOptions = get(prop("registrationOptions") ||> lspType, json)
+  let messageDirection = match (
+    get(prop("messageDirection") ||> lspMessageDirection, json)
+  ) {
+    Some(v) => v,
+    None => return None,
+  }
+  let documentation = get(prop("documentation") ||> string, json)
+  let since = get(prop("since") ||> string, json)
+  let sinceTags = get(prop("sinceTags") ||> typedArray(string), json)
+  let proposed = get(prop("proposed") ||> boolean, json)
+  let deprecated = get(prop("deprecated") ||> string, json)
+  return Some(
+    {
+      method,
+      typeName,
+      params,
+      registrationMethod,
+      registrationOptions,
+      messageDirection,
+      documentation,
+      since,
+      sinceTags,
+      proposed,
+      deprecated,
+    },
+  )
+}, set: dummySet }
+
+// LspStructure
+let lspStructure = { get: json => {
+  let name = match (get(prop("name") ||> string, json)) {
+    Some(v) => v,
+    None => return None,
+  }
+  let properties = match (
+    get(prop("properties") ||> typedArray(lspProperty), json)
+  ) {
+    Some(v) => v,
+    None => return None,
+  }
+  let deprecated = get(prop("deprecated") ||> string, json)
+  let documentation = get(prop("documentation") ||> string, json)
+  let extends = get(prop("extends") ||> typedArray(lspType), json)
+  let mixins = get(prop("mixins") ||> typedArray(lspType), json)
+  let proposed = get(prop("proposed") ||> boolean, json)
+  let since = get(prop("since") ||> string, json)
+  let sinceTags = get(prop("sinceTags") ||> typedArray(string), json)
+  return Some(
+    {
+      name,
+      properties,
+      deprecated,
+      documentation,
+      extends,
+      mixins,
+      proposed,
+      since,
+      sinceTags,
+    },
+  )
+}, set: dummySet }
+
+// LspEnumerationEntry
+let lspEnumerationEntry = { get: json => {
+  let name = match (get(prop("name") ||> string, json)) {
+    Some(v) => v,
+    None => return None,
+  }
+  let value = match (get(prop("value"), json)) {
+    Some(Json.JsonString(v)) => EnumerationEntryString(v),
+    Some(Json.JsonNumber(v)) => EnumerationEntryNumber(v),
+    _ => return None,
+  }
+  let deprecated = get(prop("deprecated") ||> string, json)
+  let documentation = get(prop("documentation") ||> string, json)
+  let proposed = get(prop("proposed") ||> boolean, json)
+  let since = get(prop("since") ||> string, json)
+  let sinceTags = get(prop("sinceTags") ||> typedArray(string), json)
+  return Some(
+    { name, value, deprecated, documentation, proposed, since, sinceTags },
+  )
+}, set: dummySet }
+// LspEnumerationType
+let lspEnumerationType = { get: json => {
+  match (get(prop("name") ||> string, json)) {
+    Some("string") => Some(EnumerationString),
+    Some("integer") => Some(EnumerationInteger),
+    Some("uinteger") => Some(EnumerationUInteger),
+    _ => None,
+  }
+}, set: dummySet }
+// LspEnumeration
+let lspEnumeration = { get: json => {
+  let name = match (get(prop("name") ||> string, json)) {
+    Some(v) => v,
+    None => return None,
+  }
+  let type_ = match (get(prop("type") ||> lspEnumerationType, json)) {
+    Some(v) => v,
+    None => return None,
+  }
+  let values = match (
+    get(prop("values") ||> typedArray(lspEnumerationEntry), json)
+  ) {
+    Some(v) => v,
+    None => return None,
+  }
+  let deprecated = get(prop("deprecated") ||> string, json)
+  let documentation = get(prop("documentation") ||> string, json)
+  let proposed = get(prop("proposed") ||> boolean, json)
+  let since = get(prop("since") ||> string, json)
+  let sinceTags = get(prop("sinceTags") ||> typedArray(string), json)
+  let supportsCustomValues = get(prop("supportsCustomValues") ||> boolean, json)
+  return Some(
+    {
+      name,
+      type_,
+      values,
+      deprecated,
+      documentation,
+      proposed,
+      since,
+      sinceTags,
+      supportsCustomValues,
+    },
+  )
+}, set: dummySet }
+
+// LspTypeAlias
+let lspTypeAlias = { get: json => {
+  let name = match (get(prop("name") ||> string, json)) {
+    Some(v) => v,
+    None => return None,
+  }
+  let type_ = match (get(prop("type") ||> lspType, json)) {
+    Some(v) => v,
+    None => {
+      print(json)
+      return None
+    },
+  }
+  let deprecated = get(prop("deprecated") ||> string, json)
+  let documentation = get(prop("documentation") ||> string, json)
+  let proposed = get(prop("proposed") ||> boolean, json)
+  let since = get(prop("since") ||> string, json)
+  let sinceTags = get(prop("sinceTags") ||> typedArray(string), json)
+  return Some(
+    { name, type_, deprecated, documentation, proposed, since, sinceTags },
+  )
+}, set: dummySet }
+
+// MetaModel
+let lspMetaModel = { get: subject => {
+  let metaData = match (get(prop("metaData") ||> lspMetaData, subject)) {
+    Some(v) => v,
+    None => return None,
+  }
+  let requests: List<LspRequest> = match (
+    get(prop("requests") ||> typedArray(lspRequest), subject)
+  ) {
+    Some(v) => v,
+    None => return None,
+  }
+  let notifications = match (
+    get(prop("notifications") ||> typedArray(lspNotification), subject)
+  ) {
+    Some(v) => v,
+    None => return None,
+  }
+  let structures = match (
+    get(prop("structures") ||> typedArray(lspStructure), subject)
+  ) {
+    Some(v) => v,
+    None => return None,
+  }
+  let enumerations = match (
+    get(prop("enumerations") ||> typedArray(lspEnumeration), subject)
+  ) {
+    Some(v) => v,
+    None => return None,
+  }
+  let typeAliases = match (
+    get(prop("typeAliases") ||> typedArray(lspTypeAlias), subject)
+  ) {
+    Some(v) => v,
+    None => return None,
+  }
+  return Some(
+    { metaData, requests, notifications, structures, enumerations, typeAliases },
+  )
+}, set: dummySet }
+
+// fromString
+provide let fromString = str => {
+  match (Json.parse(str)) {
+    Ok(json) => match (get(lspMetaModel, json)) {
+      Some(v) => Ok(v),
+      None => Err(ConversionError),
+    },
+    Err(err) => Err(JsonParseError(err)),
+  }
+}

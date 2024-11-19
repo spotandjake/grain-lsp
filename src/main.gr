@@ -1,0 +1,25 @@
+module Main
+
+from "path" include Path
+from "./utils/Fs.gr" include Fs
+from "./utils/grainPrint.gr" include GrainPrint
+from "./metaModel.gr" include MetaModel
+from "./codegen.gr" include CodeGen
+
+// TODO: Command line arguments for generation
+let version = "3.18"
+let metaModelPath = Path.fromString(
+  "./metaModel/" ++ version ++ "/metaModel.json"
+)
+let rawMetaModel = match (Fs.Utf8.readFile(metaModelPath)) {
+  Ok(content) => content,
+  Err(err) => fail "Failed to read metaModel.json",
+}
+let metaModel = match (MetaModel.fromString(rawMetaModel)) {
+  Ok(metaModel) => metaModel,
+  Err(err) => fail "Failed to parse metaModel.json",
+}
+match (CodeGen.fromMetaModel(metaModel)) {
+  Ok(_) => print("Code generation successful"),
+  Err(err) => print("Code generation failed"),
+}
